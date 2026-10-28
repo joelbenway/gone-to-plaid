@@ -46,6 +46,12 @@
             pkgs.typescript
           ];
         };
+
+        checks = {
+          package = packages.default;
+        } // (pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          nixosTest = import ./nix/test.nix { inherit pkgs self; };
+        });
       }
     ) // {
       nixosModules.default = import ./nix/module.nix self;
