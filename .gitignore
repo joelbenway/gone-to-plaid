@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.sqlite
+*.sqlite-journal
+*.log
+.env
+.env.*
+!.env.example
+result
+result-*
+.direnv/

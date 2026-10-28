@@ -1,0 +1,40 @@
+{
+  "name": "gone-to-plaid-sync",
+  "version": "1.0.0",
+  "description": "Resilient Plaid-to-Actual Budget synchronization daemon and management interface",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "gone-to-plaid-sync": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', { recursive: true })\"",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "tsx tests/index.test.ts",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "actual-budget",
+    "plaid",
+    "bank-sync",
+    "nixos",
+    "personal-finance"
+  ],
+  "author": "Joel",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@actual-app/api": "^26.1.0",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^17.3.1",
+    "plaid": "^41.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.11.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

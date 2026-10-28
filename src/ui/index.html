@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gone-to-plaid-sync | Actual Budget Bridge</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Plaid Link Official Client Library -->
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation / Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">gone-to-plaid-sync</h1>
+          <p class="brand-subtitle">Resilient Plaid to Actual Budget Bridge</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div id="actual-status-pill" class="status-pill status-disconnected">
+          <span class="status-dot"></span>
+          <span id="actual-status-text">Actual: Checking...</span>
+        </div>
+        <div id="env-badge" class="env-pill">SANDBOX</div>
+        <button id="btn-sync-all" class="btn btn-primary">
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          <span>Sync All Accounts</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Plaid Free Trial Defense Engine Meter -->
+    <section class="defense-panel">
+      <div class="defense-header">
+        <div class="defense-title-group">
+          <span class="defense-shield">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </span>
+          <div>
+            <h2>Plaid Free Trial Defense Engine</h2>
+            <p class="defense-desc">Protects your complimentary 10-Item quota from irreversible billing burn</p>
+          </div>
+        </div>
+
+        <div class="quota-counter-box">
+          <div class="quota-numbers">
+            <span id="quota-used">0</span>
+            <span class="quota-divider">/</span>
+            <span id="quota-max">10</span>
+          </div>
+          <span class="quota-label">Lifetime Items</span>
+        </div>
+      </div>
+
+      <div class="quota-bar-wrapper">
+        <div class="quota-bar">
+          <div id="quota-bar-fill" class="quota-bar-fill" style="width: 0%"></div>
+        </div>
+        <div class="quota-subtext">
+          <span id="quota-remaining-text">10 slots remaining</span>
+          <span class="quota-safeguard-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Update Mode Strictly Enforced
+          </span>
+        </div>
+      </div>
+
+      <div class="defense-actions">
+        <button id="btn-connect-institution" class="btn btn-emerald">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>Connect New Institution</span>
+        </button>
+        <span id="quota-lockout-notice" class="quota-lockout-notice hidden">
+          Quota exhausted (10/10). Destructive deletion will not restore slots.
+        </span>
+      </div>
+    </section>
+
+    <!-- Main Content Area: Institutions & Mappings -->
+    <main class="main-content">
+      <!-- Section: Connected Institutions -->
+      <section class="section">
+        <div class="section-header">
+          <h3 class="section-title">Connected Financial Institutions</h3>
+          <span id="item-count-badge" class="count-badge">0 items</span>
+        </div>
+
+        <div id="institutions-container" class="institutions-grid">
+          <!-- Dynamically populated institution cards -->
+          <div class="empty-state">
+            <p>No institutions connected yet.</p>
+            <p class="empty-state-sub">Click "Connect New Institution" above to link your first bank via Plaid.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Account Topology Mapping -->
+      <section id="mappings-section" class="section">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Account Topology Mapping</h3>
+            <p class="section-subtitle">Map discovered Plaid accounts to your target Actual Budget accounts</p>
+          </div>
+          <button id="btn-save-mappings" class="btn btn-secondary">
+            Save All Mappings
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">Sync</th>
+                <th>Institution</th>
+                <th>Plaid Account</th>
+                <th>Type & Mask</th>
+                <th>Target Actual Account</th>
+                <th style="width: 80px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="mappings-table-body">
+              <tr>
+                <td colspan="6" class="table-empty">No accounts discovered yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section: Sync History -->
+      <section class="section">
+        <div class="section-header">
+          <h3 class="section-title">Recent Sync Activity</h3>
+          <button id="btn-refresh-history" class="btn-text">Refresh History</button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Institution</th>
+                <th>Status</th>
+                <th>Added</th>
+                <th>Modified</th>
+                <th>Removed</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="7" class="table-empty">No sync logs recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Destructive Unlink Modal (Trial Defense Safeguard) -->
+    <div id="modal-unlink" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-icon-danger">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+          </svg>
+        </div>
+        <h3 class="modal-title">Irreversible Quota Burn Warning</h3>
+        <p class="modal-text">
+          Plaid's Free Trial tier provides <strong>10 lifetime Item slots</strong>.
+          Calling unlink permanently burns this slot in Plaid's billing ledger:
+          <strong>your quota counter will not be restored!</strong>
+        </p>
+        <p class="modal-subtext">
+          If you are experiencing connection drops or MFA errors, click <strong>"Repair"</strong> instead to refresh credentials in place with zero quota usage.
+        </p>
+
+        <div class="modal-input-group">
+          <label for="unlink-confirm-input" class="modal-label">
+            To confirm permanent slot loss, type <span id="unlink-target-name" class="code-span">BANK NAME</span> or <span class="code-span">IRREVERSIBLE QUOTA LOSS</span> below:
+          </label>
+          <input type="text" id="unlink-confirm-input" class="modal-input" placeholder="Type confirmation here...">
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-cancel-unlink" class="btn btn-secondary">Cancel</button>
+          <button id="btn-confirm-unlink" class="btn btn-danger" disabled>Permanently Burn Slot & Unlink</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
