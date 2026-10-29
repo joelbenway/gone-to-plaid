@@ -1,0 +1,47 @@
+# Copyright (c) Joel Benway
+# SPDX-License-Identifier: MIT
+
+services:
+  # ==========================================
+  # Actual Budget Self-Hosted Server
+  # ==========================================
+  actual-server:
+    image: docker.io/actualbudget/actual-server:latest
+    container_name: actual-server
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./actual-data:/data
+    environment:
+      # Optional: specify trusted proxies or server configuration if needed
+      - ACTUAL_PORT=5006
+
+  # ==========================================
+  # gone-to-plaid Synchronization Daemon
+  # ==========================================
+  gone-to-plaid:
+    image: ghcr.io/joelbenway/gone-to-plaid:latest
+    container_name: gone-to-plaid
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./plaid-data:/data
+    environment:
+      # Plaid API credentials
+      - PLAID_CLIENT_ID=your_plaid_client_id
+      - PLAID_SECRET=your_plaid_secret
+      - PLAID_ENV=sandbox # 'sandbox' for testing, 'production' for live bank accounts
+      # Actual Budget connection (resolves directly across docker container network)
+      - ACTUAL_SERVER_URL=http://actual-server:5006
+      - ACTUAL_PASSWORD=your_actual_server_password
+      - ACTUAL_SYNC_ID=your_actual_budget_sync_id
+      # Optional: If your budget file uses End-to-End Encryption (E2EE)
+      # - ACTUAL_ENCRYPTION_PASSWORD=your_budget_file_encryption_password
+      # Daemon settings
+      - PORT=8085
+      - DATA_DIR=/data
+      - SYNC_INTERVAL_MINUTES=240
+    depends_on:
+      - actual-server

@@ -38,6 +38,32 @@
 
         packages.gone-to-plaid = packages.default;
 
+        packages.dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "ghcr.io/joelbenway/gone-to-plaid";
+          tag = "latest";
+          contents = [
+            packages.default
+            pkgs.cacert
+            pkgs.tzdata
+          ];
+          config = {
+            Cmd = [ "${packages.default}/bin/gone-to-plaid" ];
+            Env = [
+              "NODE_ENV=production"
+              "PORT=8085"
+              "DATA_DIR=/data"
+              "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            ];
+            Volumes = {
+              "/data" = {};
+            };
+            ExposedPorts = {
+              "8085/tcp" = {};
+            };
+            WorkingDir = "/data";
+          };
+        };
+
         apps.default = {
           type = "app";
           program = "${packages.default}/bin/gone-to-plaid";

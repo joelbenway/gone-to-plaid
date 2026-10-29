@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/joelbenway/gone-to-plaid/actions/workflows/ci.yaml/badge.svg)](https://github.com/joelbenway/gone-to-plaid/actions/workflows/ci.yaml)
 [![npm version](https://img.shields.io/npm/v/gone-to-plaid.svg)](https://www.npmjs.com/package/gone-to-plaid)
+[![OCI Container](https://img.shields.io/badge/OCI-ghcr.io-238636?logo=docker&logoColor=white)](https://github.com/joelbenway/gone-to-plaid/pkgs/container/gone-to-plaid)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Nix Flake](https://img.shields.io/badge/Nix-Flake-5277C3.svg?logo=nixos&logoColor=white)](flake.nix)
 
@@ -92,14 +93,72 @@ Following an architectural review of Actual Budget:
 
 ---
 
-## Quick Start (Zero-Install `npx` or Local Dev)
+## Deployment & Quick Start
 
-### Option A: Run Instantly via `npx`
+### 1. Docker & Docker Compose (Recommended for Actual Budget Self-Hosters)
+
+Deploy `gone-to-plaid` as an automated sidecar next to your `actual-server`:
+
+```yaml
+# docker-compose.yml
+services:
+  actual-server:
+    image: docker.io/actualbudget/actual-server:latest
+    container_name: actual-server
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./actual-data:/data
+
+  gone-to-plaid:
+    image: ghcr.io/joelbenway/gone-to-plaid:latest
+    container_name: gone-to-plaid
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./plaid-data:/data
+    environment:
+      - PLAID_CLIENT_ID=your_plaid_client_id
+      - PLAID_SECRET=your_plaid_secret
+      - PLAID_ENV=sandbox # 'sandbox' for testing, 'production' for live bank accounts
+      - ACTUAL_SERVER_URL=http://actual-server:5006
+      - ACTUAL_PASSWORD=your_actual_server_password
+      - ACTUAL_SYNC_ID=your_budget_sync_id
+      - PORT=8085
+      - DATA_DIR=/data
+      - SYNC_INTERVAL_MINUTES=240
+    depends_on:
+      - actual-server
+```
+
+Or run standalone with Docker:
+```bash
+docker run -d \
+  --name gone-to-plaid \
+  -p 8085:8085 \
+  -v $(pwd)/data:/data \
+  --env-file .env \
+  ghcr.io/joelbenway/gone-to-plaid:latest
+```
+
+### 2. Run via `npx` (Zero-Install CLI)
 ```bash
 npx gone-to-plaid --port 8085 --data-dir ./data
 ```
 
-### Option B: Local Repository Clone
+### 3. Run via Nix
+```bash
+# Run directly from GitHub
+nix run github:joelbenway/gone-to-plaid -- --port 8085 --data-dir ./data
+
+# Or build the OCI container image purely via Nix
+nix build github:joelbenway/gone-to-plaid#dockerImage
+docker load < result
+```
+
+### 4. Local Development Clone
 ```bash
 git clone https://github.com/joelbenway/gone-to-plaid.git
 cd gone-to-plaid
