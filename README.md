@@ -1,6 +1,6 @@
 # gone-to-plaid-sync
 
-[![CI](https://github.com/your-username/gone-to-plaid-sync/actions/workflows/ci.yaml/badge.svg)](https://github.com/your-username/gone-to-plaid-sync/actions/workflows/ci.yaml)
+[![CI](https://github.com/joelbenway/gone-to-plaid-sync/actions/workflows/ci.yaml/badge.svg)](https://github.com/joelbenway/gone-to-plaid-sync/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Nix Flake](https://img.shields.io/badge/Nix-Flake-5277C3.svg?logo=nixos&logoColor=white)](flake.nix)
 
@@ -98,7 +98,7 @@ Following an architectural review of Actual Budget:
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/your-username/gone-to-plaid-sync.git
+git clone https://github.com/joelbenway/gone-to-plaid-sync.git
 cd gone-to-plaid-sync
 npm install
 ```
@@ -146,7 +146,7 @@ In your `flake.nix`:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    gone-to-plaid-sync.url = "github:your-username/gone-to-plaid-sync";
+    gone-to-plaid-sync.url = "github:joelbenway/gone-to-plaid-sync";
   };
 
   outputs = { self, nixpkgs, gone-to-plaid-sync, ... }: {
