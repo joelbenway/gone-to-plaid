@@ -52,16 +52,7 @@ in
     };
   };
 
-  # Compatibility alias for services.gone-to-plaid-sync
-  options.services.gone-to-plaid-sync = mkOption {
-    type = types.attrs;
-    default = {};
-    description = "Deprecated alias for services.gone-to-plaid.";
-  };
-
-  config = mkIf (cfg.enable || config.services.gone-to-plaid-sync.enable or false) {
-    # If legacy option used, mirror enable
-    services.gone-to-plaid.enable = mkDefault true;
+  config = mkIf cfg.enable {
 
     users.users.plaid-sync = {
       isSystemUser = true;
