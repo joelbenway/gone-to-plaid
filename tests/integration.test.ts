@@ -10,7 +10,7 @@ import { SyncEngine } from '../src/core/syncer.js';
 import { ApiServer } from '../src/server/server.js';
 import { AppConfig } from '../src/config.js';
 
-console.log('--- Running gone-to-plaid-sync Integration Test Suite ---');
+console.log('--- Running gone-to-plaid Integration Test Suite ---');
 
 const testDir = path.join(process.cwd(), '.tmp-integration-test');
 if (fs.existsSync(testDir)) fs.rmSync(testDir, { recursive: true, force: true });

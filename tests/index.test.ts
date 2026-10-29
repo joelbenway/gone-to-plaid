@@ -8,7 +8,7 @@ import { plaidToActualAmount, formatPayee } from '../src/core/transform.js';
 import { DefenseEngine, MAX_TRIAL_ITEMS, CONFIRM_PHRASE } from '../src/core/defense.js';
 import { DatabaseStore } from '../src/db/index.js';
 
-console.log('--- Running gone-to-plaid-sync Test Suite ---');
+console.log('--- Running gone-to-plaid Test Suite ---');
 
 // 1. Data Transformation Tests
 console.log('Testing data transformations...');

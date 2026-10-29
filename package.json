@@ -1,29 +1,45 @@
 {
-  "name": "gone-to-plaid-sync",
+  "name": "gone-to-plaid",
   "version": "1.0.0",
-  "description": "Resilient Plaid-to-Actual Budget synchronization daemon and management interface",
+  "description": "Ludicrous-speed Plaid-to-Actual Budget synchronization daemon and management interface",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "gone-to-plaid-sync": "./dist/index.js"
+    "gone-to-plaid": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').cpSync('src/ui', 'dist/ui', { recursive: true })\"",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "tsx tests/index.test.ts && tsx tests/integration.test.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "actual-budget",
     "plaid",
     "bank-sync",
     "nixos",
-    "personal-finance"
+    "personal-finance",
+    "spaceballs",
+    "ludicrous-speed"
   ],
   "author": "Joel Benway",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joelbenway/gone-to-plaid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joelbenway/gone-to-plaid/issues"
+  },
+  "homepage": "https://github.com/joelbenway/gone-to-plaid#readme",
   "dependencies": {
     "@actual-app/api": "^26.1.0",
     "better-sqlite3": "^13.0.3",

@@ -1,10 +1,13 @@
-# gone-to-plaid-sync
+# gone-to-plaid
 
-[![CI](https://github.com/joelbenway/gone-to-plaid-sync/actions/workflows/ci.yaml/badge.svg)](https://github.com/joelbenway/gone-to-plaid-sync/actions/workflows/ci.yaml)
+[![CI](https://github.com/joelbenway/gone-to-plaid/actions/workflows/ci.yaml/badge.svg)](https://github.com/joelbenway/gone-to-plaid/actions/workflows/ci.yaml)
+[![npm version](https://img.shields.io/npm/v/gone-to-plaid.svg)](https://www.npmjs.com/package/gone-to-plaid)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Nix Flake](https://img.shields.io/badge/Nix-Flake-5277C3.svg?logo=nixos&logoColor=white)](flake.nix)
 
-A lightweight, resilient synchronization daemon and web management interface bridging **Plaid** banking feeds with self-hosted **Actual Budget** instances.
+> *"They've gone to plaid!"* — *Spaceballs* (1987)
+
+A ludicrous-speed, resilient synchronization daemon and management dashboard bridging **Plaid** banking feeds with self-hosted **Actual Budget** instances.
 
 Specifically engineered to operate permanently within Plaid's complimentary **Trial tier** while preventing accidental consumption of non-refundable connection quotas.
 
@@ -25,9 +28,9 @@ Without protective middleware, self-hosters routinely exhaust their lifetime quo
 
 ## The Solution: Plaid Free Trial Defense Engine
 
-`gone-to-plaid-sync` acts as a protective shield between your banking accounts, Plaid, and Actual Budget:
+`gone-to-plaid` acts as a protective shield between your banking accounts, Plaid, and Actual Budget:
 
-| Failure Mode | Standard Behavior (Slot Loss) | `gone-to-plaid-sync` Safeguard |
+| Failure Mode | Standard Behavior (Slot Loss) | `gone-to-plaid` Safeguard |
 | :--- | :--- | :--- |
 | **Credential Expiry / MFA** | Standard Link flow generates a duplicate Item and burns another slot. | Launches Plaid Link strictly in **Update Mode** (`access_token` passed to `/link/token/create`), refreshing credentials in place with **zero slot usage**. |
 | **Accidental Item Deletion** | Deleting an Item to "reset" it permanently burns that allocation slot. | Hard-blocks destructive deletion without a typed administrative confirmation warning (`IRREVERSIBLE QUOTA LOSS`). |
@@ -42,12 +45,12 @@ Without protective middleware, self-hosters routinely exhaust their lifetime quo
 Following an architectural review of Actual Budget:
 - Upstream Actual Budget's plugin system is actively being developed (e.g. PR stack [#8546](https://github.com/actualbudget/actual/pull/8546)) and is not yet merged into stable releases.
 - Native Plaid support in Actual core has historically stalled due to liability concerns and Bring-Your-Own-Key (BYOK) UX hurdles.
-- **`gone-to-plaid-sync` is deployed as a decoupled sidecar daemon** communicating via `@actual-app/api`.
+- **`gone-to-plaid` is deployed as a decoupled sidecar daemon** communicating via `@actual-app/api`.
 - The codebase is strictly partitioned: `src/core/` houses the headless sync engine and quota defense rules. When Actual Budget's upstream plugin stack stabilizes, the core logic can be packaged directly as an official `@actual-app/bank-sync-plaid` plugin.
 
 ```
 +-----------------------------------------------------------------------------------+
-| gone-to-plaid-sync Daemon                                                         |
+| gone-to-plaid Daemon                                                              |
 |                                                                                   |
 |  +--------------------+        +---------------------+      +------------------+  |
 |  | Web Admin UI       | <----> | Native HTTP Server  | <--> | SQLite Store     |  |
@@ -89,21 +92,22 @@ Following an architectural review of Actual Budget:
 
 ---
 
-## Quick Start (Local Development)
+## Quick Start (Zero-Install `npx` or Local Dev)
 
-### Prerequisites
-- Node.js 22+ or 24+
-- A running Actual Budget instance (or local budget file)
-- Plaid Developer Account ([plaid.com](https://plaid.com))
-
-### 1. Clone & Install
+### Option A: Run Instantly via `npx`
 ```bash
-git clone https://github.com/joelbenway/gone-to-plaid-sync.git
-cd gone-to-plaid-sync
-npm install
+npx gone-to-plaid --port 8085 --data-dir ./data
 ```
 
-### 2. Configure Environment
+### Option B: Local Repository Clone
+```bash
+git clone https://github.com/joelbenway/gone-to-plaid.git
+cd gone-to-plaid
+npm install
+npm run dev
+```
+
+### Configure Environment (`.env`)
 Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
@@ -128,17 +132,13 @@ DATA_DIR=./data
 SYNC_INTERVAL_MINUTES=240
 ```
 
-### 3. Run Development Server
-```bash
-npm run dev
-```
 Open [http://localhost:8085](http://localhost:8085) in your browser.
 
 ---
 
 ## NixOS Deployment (`nixcfg`)
 
-`gone-to-plaid-sync` is packaged as a standard Nix Flake with a declarative NixOS service module.
+`gone-to-plaid` is packaged as a standard Nix Flake with a declarative NixOS service module.
 
 ### 1. Add Flake Input
 In your `flake.nix`:
@@ -146,14 +146,14 @@ In your `flake.nix`:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    gone-to-plaid-sync.url = "github:joelbenway/gone-to-plaid-sync";
+    gone-to-plaid.url = "github:joelbenway/gone-to-plaid";
   };
 
-  outputs = { self, nixpkgs, gone-to-plaid-sync, ... }: {
+  outputs = { self, nixpkgs, gone-to-plaid, ... }: {
     nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        gone-to-plaid-sync.nixosModules.default
+        gone-to-plaid.nixosModules.default
         ./configuration.nix
       ];
     };
@@ -167,18 +167,18 @@ In your `configuration.nix`:
 { config, pkgs, ... }:
 
 {
-  services.gone-to-plaid-sync = {
+  services.gone-to-plaid = {
     enable = true;
     port = 8085;
     syncInterval = "4h";
-    environmentFile = config.sops.secrets.plaid_sync_env.path; # or agenix
+    environmentFile = config.sops.secrets.plaid_env.path; # or agenix
   };
 }
 ```
 
 The NixOS module automatically provisions:
-- `gone-to-plaid-sync.service`: Sandboxed systemd service running under dedicated user `plaid-sync`.
-- `gone-to-plaid-sync-trigger.timer`: Systemd timer triggering scheduled background ledger updates.
+- `gone-to-plaid.service`: Sandboxed systemd service running under dedicated user `plaid-sync`.
+- `gone-to-plaid-trigger.timer`: Systemd timer triggering scheduled background ledger updates.
 - Hardened sandbox with `ProtectSystem = "strict"`, `ProtectHome = true`, and `PrivateTmp = true`.
 
 ---

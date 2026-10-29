@@ -51,7 +51,7 @@ export class PlaidService {
 
     const request: any = {
       user: { client_user_id: 'actual-budget-owner' },
-      client_name: 'gone-to-plaid-sync',
+      client_name: 'gone-to-plaid',
       language: 'en',
     };
 

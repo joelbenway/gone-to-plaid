@@ -14,7 +14,7 @@ async function main() {
   const config = loadConfig();
 
   console.log('========================================================');
-  console.log(' gone-to-plaid-sync (Resilient Plaid -> Actual Bridge)  ');
+  console.log('  gone-to-plaid (Ludicrous-speed Plaid -> Actual Bridge)');
   console.log('========================================================');
   console.log(`Port:             ${config.port}`);
   console.log(`Data Directory:   ${config.dataDir}`);
@@ -66,16 +66,16 @@ async function main() {
 
   // Graceful shutdown handling
   const shutdown = async (signal: string) => {
-    console.log(`\n[gone-to-plaid-sync] Received ${signal}. Shutting down cleanly...`);
+    console.log(`\n[gone-to-plaid] Received ${signal}. Shutting down cleanly...`);
     if (syncTimer) clearInterval(syncTimer);
     try {
       await server.close();
       await actual.shutdown();
       db.db.close();
-      console.log('[gone-to-plaid-sync] Shutdown complete. Goodbye.');
+      console.log('[gone-to-plaid] Shutdown complete. Goodbye.');
       process.exit(0);
     } catch (err) {
-      console.error('[gone-to-plaid-sync] Error during shutdown:', err);
+      console.error('[gone-to-plaid] Error during shutdown:', err);
       process.exit(1);
     }
   };
@@ -85,6 +85,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[gone-to-plaid-sync] Fatal startup error:', err);
+  console.error('[gone-to-plaid] Fatal startup error:', err);
   process.exit(1);
 });

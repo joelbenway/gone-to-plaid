@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // ==========================================================================
-// gone-to-plaid-sync Dashboard Controller
+// gone-to-plaid Dashboard Controller
 // ==========================================================================
 
 const state = {
@@ -69,7 +69,7 @@ async function fetchStatus() {
     renderInstitutions(state.items);
   } catch (err) {
     console.error('Failed to load status:', err);
-    showToast('Failed to connect to gone-to-plaid-sync daemon', 'error');
+    showToast('Failed to connect to gone-to-plaid daemon', 'error');
   }
 }
 

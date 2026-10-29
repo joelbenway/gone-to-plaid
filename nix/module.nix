@@ -6,16 +6,16 @@ self: { config, lib, pkgs, ... }:
 with lib;
 
 let
-  cfg = config.services.gone-to-plaid-sync;
+  cfg = config.services.gone-to-plaid;
 in
 {
-  options.services.gone-to-plaid-sync = {
-    enable = mkEnableOption "gone-to-plaid-sync daemon for Actual Budget";
+  options.services.gone-to-plaid = {
+    enable = mkEnableOption "gone-to-plaid daemon for Actual Budget";
 
     package = mkOption {
       type = types.package;
       default = self.packages.${pkgs.system}.default;
-      description = "The package providing gone-to-plaid-sync.";
+      description = "The package providing gone-to-plaid.";
     };
 
     port = mkOption {
@@ -26,7 +26,7 @@ in
 
     dataDir = mkOption {
       type = types.path;
-      default = "/var/lib/gone-to-plaid-sync";
+      default = "/var/lib/gone-to-plaid";
       description = "Directory storing local SQLite database and sync state.";
     };
 
@@ -52,7 +52,17 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  # Compatibility alias for services.gone-to-plaid-sync
+  options.services.gone-to-plaid-sync = mkOption {
+    type = types.attrs;
+    default = {};
+    description = "Deprecated alias for services.gone-to-plaid.";
+  };
+
+  config = mkIf (cfg.enable || config.services.gone-to-plaid-sync.enable or false) {
+    # If legacy option used, mirror enable
+    services.gone-to-plaid.enable = mkDefault true;
+
     users.users.plaid-sync = {
       isSystemUser = true;
       group = "plaid-sync";
@@ -61,14 +71,14 @@ in
     };
     users.groups.plaid-sync = {};
 
-    systemd.services.gone-to-plaid-sync = {
+    systemd.services.gone-to-plaid = {
       description = "Gone To Plaid Actual Sync Daemon";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/gone-to-plaid-sync --data-dir ${cfg.dataDir} --port ${toString cfg.port}";
+        ExecStart = "${cfg.package}/bin/gone-to-plaid --data-dir ${cfg.dataDir} --port ${toString cfg.port}";
         Restart = "on-failure";
         RestartSec = "10s";
         User = "plaid-sync";
@@ -87,18 +97,18 @@ in
       };
     };
 
-    systemd.timers.gone-to-plaid-sync-trigger = {
-      description = "Periodic trigger for gone-to-plaid-sync ledger sync";
+    systemd.timers.gone-to-plaid-trigger = {
+      description = "Periodic trigger for gone-to-plaid ledger sync";
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "5m";
         OnUnitActiveSec = cfg.syncInterval;
-        Unit = "gone-to-plaid-sync-run.service";
+        Unit = "gone-to-plaid-run.service";
       };
     };
 
-    systemd.services.gone-to-plaid-sync-run = {
-      description = "Run gone-to-plaid-sync background pass";
+    systemd.services.gone-to-plaid-run = {
+      description = "Run gone-to-plaid background pass";
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.curl}/bin/curl -s -X POST http://127.0.0.1:${toString cfg.port}/api/sync";

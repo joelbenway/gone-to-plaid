@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 {
-  description = "gone-to-plaid-sync: Resilient Plaid-to-Actual Budget bridge";
+  description = "gone-to-plaid: Ludicrous-speed Plaid-to-Actual Budget bridge";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -16,7 +16,7 @@
       in
       rec {
         packages.default = pkgs.buildNpmPackage {
-          pname = "gone-to-plaid-sync";
+          pname = "gone-to-plaid";
           version = "1.0.0";
           src = ./.;
 
@@ -27,20 +27,20 @@
           '';
 
           installPhase = ''
-            mkdir -p $out/bin $out/lib/gone-to-plaid-sync
-            cp -r dist node_modules package.json $out/lib/gone-to-plaid-sync/
-            makeWrapper ${pkgs.nodejs_22}/bin/node $out/bin/gone-to-plaid-sync \
-              --add-flags "$out/lib/gone-to-plaid-sync/dist/index.js"
+            mkdir -p $out/bin $out/lib/gone-to-plaid
+            cp -r dist node_modules package.json $out/lib/gone-to-plaid/
+            makeWrapper ${pkgs.nodejs_22}/bin/node $out/bin/gone-to-plaid \
+              --add-flags "$out/lib/gone-to-plaid/dist/index.js"
           '';
 
           nativeBuildInputs = [ pkgs.makeWrapper pkgs.python3 ];
         };
 
-        packages.gone-to-plaid-sync = packages.default;
+        packages.gone-to-plaid = packages.default;
 
         apps.default = {
           type = "app";
-          program = "${packages.default}/bin/gone-to-plaid-sync";
+          program = "${packages.default}/bin/gone-to-plaid";
         };
 
         devShells.default = pkgs.mkShell {
@@ -58,9 +58,9 @@
       }
     ) // {
       nixosModules.default = import ./nix/module.nix self;
-      nixosModules.gone-to-plaid-sync = self.nixosModules.default;
+      nixosModules.gone-to-plaid = self.nixosModules.default;
       overlays.default = final: prev: {
-        gone-to-plaid-sync = self.packages.${prev.system}.default;
+        gone-to-plaid = self.packages.${prev.system}.default;
       };
     };
 }

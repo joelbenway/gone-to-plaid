@@ -40,9 +40,9 @@ export class ApiServer {
   public listen(): Promise<void> {
     return new Promise((resolve) => {
       this.server.listen(this.config.port, '0.0.0.0', () => {
-        console.log(`[gone-to-plaid-sync] Listening on http://0.0.0.0:${this.config.port}`);
-        console.log(`[gone-to-plaid-sync] UI Directory: ${this.uiDir}`);
-        console.log(`[gone-to-plaid-sync] Plaid Environment: ${this.config.plaidEnv}`);
+        console.log(`[gone-to-plaid] Listening on http://0.0.0.0:${this.config.port}`);
+        console.log(`[gone-to-plaid] UI Directory: ${this.uiDir}`);
+        console.log(`[gone-to-plaid] Plaid Environment: ${this.config.plaidEnv}`);
         resolve();
       });
     });

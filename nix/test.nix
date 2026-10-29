@@ -4,23 +4,23 @@
 { pkgs, self }:
 
 pkgs.testers.runNixOSTest {
-  name = "gone-to-plaid-sync-test";
+  name = "gone-to-plaid-test";
 
   nodes.machine = { config, pkgs, ... }: {
     imports = [ self.nixosModules.default ];
 
-    services.gone-to-plaid-sync = {
+    services.gone-to-plaid = {
       enable = true;
       port = 8085;
-      dataDir = "/var/lib/gone-to-plaid-sync";
+      dataDir = "/var/lib/gone-to-plaid";
     };
   };
 
   testScript = ''
     start_all()
-    machine.wait_for_unit("gone-to-plaid-sync.service")
+    machine.wait_for_unit("gone-to-plaid.service")
     machine.wait_for_open_port(8085)
-    machine.wait_for_unit("gone-to-plaid-sync-trigger.timer")
+    machine.wait_for_unit("gone-to-plaid-trigger.timer")
 
     # Verify the API responds with valid JSON status
     status = machine.succeed("curl -fs http://127.0.0.1:8085/api/status")
