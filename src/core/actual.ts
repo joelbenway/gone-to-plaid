@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 import * as actualApi from '@actual-app/api';
 import { AppConfig } from '../config.js';
 

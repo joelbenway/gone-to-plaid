@@ -1,3 +1,6 @@
+# Copyright (c) Joel Benway
+# SPDX-License-Identifier: MIT
+
 self: { config, lib, pkgs, ... }:
 
 with lib;

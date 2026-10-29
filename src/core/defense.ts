@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 import { DatabaseStore } from '../db/index.js';
 
 export const MAX_TRIAL_ITEMS = 10;

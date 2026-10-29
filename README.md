@@ -1,38 +1,91 @@
-# `gone-to-plaid-sync`
+# gone-to-plaid-sync
 
-A lightweight, resilient synchronization daemon and management dashboard bridging **Plaid** with self-hosted **Actual Budget** instances.
+[![CI](https://github.com/your-username/gone-to-plaid-sync/actions/workflows/ci.yaml/badge.svg)](https://github.com/your-username/gone-to-plaid-sync/actions/workflows/ci.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Nix Flake](https://img.shields.io/badge/Nix-Flake-5277C3.svg?logo=nixos&logoColor=white)](flake.nix)
+
+A lightweight, resilient synchronization daemon and web management interface bridging **Plaid** banking feeds with self-hosted **Actual Budget** instances.
 
 Specifically engineered to operate permanently within Plaid's complimentary **Trial tier** while preventing accidental consumption of non-refundable connection quotas.
 
 ---
 
-## Features
+## The Problem: Plaid's Free Trial Quota Trap
 
-- **Plaid Free Trial Defense Engine:**
-  - **Lifetime Quota Meter:** Real-time visual tracking of `N / 10` lifetime production items.
-  - **Strict Update Mode:** Enforces `existingAccessToken` during credential refresh and MFA updates, avoiding duplicate item creation and slot burning.
-  - **Duplicate Prevention:** Pre-flight validation blocks adding institutions that are already connected.
-  - **Destructive Deletion Lockout:** Protects against accidental deletion of items with a typed confirmation safeguard (`IRREVERSIBLE QUOTA LOSS`).
-  - **Sandbox / Production Isolation:** Mock institution credentials (`user_good` / `pass_good`) with unlimited sandbox slots.
-- **Precision Ledger Synchronization:**
-  - **Exact Accounting Parity:** Inverts Plaid debit/credit signs and converts amounts to Actual's integer cents formula: $\operatorname{round}(-\text{amount} \times 100)$.
-  - **Pending Authorization Lifecycle:** Tracks Plaid transaction mappings to automatically remove pending authorizations via `api.deleteTransaction()` when posted items settle.
-  - **Payee Hygiene:** Intelligent payee normalization using `merchant_name` with fallback to raw transaction strings.
-- **Self-Hosting & Nix First:**
-  - Declarative **NixOS Module** with systemd timers and sandboxing.
-  - Seamless integration with `sops-nix` or `agenix` for secret management.
-  - Works with end-to-end encrypted (E2EE) Actual Budget files.
-  - Optional webhook listener (`/api/plaid/webhook`) for instant synchronization upon `SYNC_UPDATES_AVAILABLE`.
+Plaid's free developer Trial tier provides access to live US and Canadian production bank connections with zero monthly platform fees. However, it enforces an **absolute lifetime ceiling of 10 Production Items**.
+
+Crucially, Plaid's billing engine treats this quota as an **irreversible counter**:
+- Calling `/item/remove` unlinks an institution, but **does not decrement** the usage counter.
+- If an institution's session expires and a user runs standard Plaid Link to reconnect, Plaid creates a *second* item, burning an additional slot for the same bank.
+- Deleting an institution to "reset" it burns that allocation slot permanently.
+
+Without protective middleware, self-hosters routinely exhaust their lifetime quota through casual re-authentication or configuration drops.
+
+---
+
+## The Solution: Plaid Free Trial Defense Engine
+
+`gone-to-plaid-sync` acts as a protective shield between your banking accounts, Plaid, and Actual Budget:
+
+| Failure Mode | Standard Behavior (Slot Loss) | `gone-to-plaid-sync` Safeguard |
+| :--- | :--- | :--- |
+| **Credential Expiry / MFA** | Standard Link flow generates a duplicate Item and burns another slot. | Launches Plaid Link strictly in **Update Mode** (`access_token` passed to `/link/token/create`), refreshing credentials in place with **zero slot usage**. |
+| **Accidental Item Deletion** | Deleting an Item to "reset" it permanently burns that allocation slot. | Hard-blocks destructive deletion without a typed administrative confirmation warning (`IRREVERSIBLE QUOTA LOSS`). |
+| **Duplicate Institution Link** | User links an institution that is already connected, consuming another slot. | Pre-flight validation checks incoming `institution_id` against active local items and rejects duplicates prior to token exchange. |
+| **Quota Blindness** | Unmonitored connections approach the 10-Item limit without warning. | Displays a real-time `N / 10` lifetime allocation meter in the web dashboard and automatically locks out enrollment at 10 items. |
+| **Dev & Script Testing** | Testing against live banking credentials consumes production slots. | Environment toggle (`PLAID_ENV=sandbox`) forces mock institution credentials (`user_good` / `pass_good`) with unlimited slots. |
 
 ---
 
 ## Architectural Strategy
 
-Following an evaluation of Actual Budget's current ecosystem:
+Following an architectural review of Actual Budget:
 - Upstream Actual Budget's plugin system is actively being developed (e.g. PR stack [#8546](https://github.com/actualbudget/actual/pull/8546)) and is not yet merged into stable releases.
-- Native Plaid support upstream has historically faced Bring-Your-Own-Key (BYOK) UX hurdles and liability constraints.
-- `gone-to-plaid-sync` is deployed as a **decoupled sidecar daemon** communicating via `@actual-app/api`.
-- The codebase is structured cleanly: `src/core/` houses the pure sync and defense logic, ensuring it can easily be adapted into an official Actual plugin once upstream plugin infrastructure stabilizes.
+- Native Plaid support in Actual core has historically stalled due to liability concerns and Bring-Your-Own-Key (BYOK) UX hurdles.
+- **`gone-to-plaid-sync` is deployed as a decoupled sidecar daemon** communicating via `@actual-app/api`.
+- The codebase is strictly partitioned: `src/core/` houses the headless sync engine and quota defense rules. When Actual Budget's upstream plugin stack stabilizes, the core logic can be packaged directly as an official `@actual-app/bank-sync-plaid` plugin.
+
+```
++-----------------------------------------------------------------------------------+
+| gone-to-plaid-sync Daemon                                                         |
+|                                                                                   |
+|  +--------------------+        +---------------------+      +------------------+  |
+|  | Web Admin UI       | <----> | Native HTTP Server  | <--> | SQLite Store     |  |
+|  | (Quota Meter,      |        | - Link Handshake    |      | - Items & Tokens |  |
+|  |  Topology Mapping, |        | - Sync Endpoints    |      | - Account Maps   |  |
+|  |  Repair Flow)      |        | - Webhook Receiver  |      | - Cursors & TxID |  |
+|  +--------------------+        +----------+----------+      +------------------+  |
+|                                           |                                       |
+|                                +----------v----------+                            |
+|                                | Sync Engine (Core)  |                            |
+|                                | - Delta Fetcher     |                            |
+|                                | - Sign & Cent Scale |                            |
+|                                | - Pending Resolver  |                            |
+|                                +----+-----------+----+                            |
++-------------------------------------|-----------|---------------------------------+
+                                      |           |
+                              Plaid API           Actual Budget Server / API
+                    (/transactions/sync)          (@actual-app/api)
+```
+
+---
+
+## Features
+
+- **Exact Accounting Parity:**
+  - Plaid reports debits/outflows as positive floats (`12.50`) and credits as negative floats (`-1200.00`).
+  - Actual Budget requires integer cents where outflows are negative (`-1250`) and inflows are positive (`120000`).
+  - Transformation formula: $\operatorname{round}(-\text{plaid\_amount} \times 100)$ with negative-zero normalization.
+- **Pending vs. Posted Lifecycle Management:**
+  - Tracks Plaid transaction mappings in SQLite (`plaid_tx_id -> actual_tx_id`).
+  - When Plaid emits a removal for a pending authorization that has settled or dropped, the engine resolves the internal `actual_tx_id` and invokes `api.deleteTransaction()` on Actual Budget to eliminate ghost duplicates.
+- **End-to-End Encryption (E2EE) Support:**
+  - Supports encrypted Actual Budget files via `ACTUAL_ENCRYPTION_PASSWORD`.
+- **Payee Hygiene:**
+  - Prefers enriched `merchant_name`, with fallback to raw transaction strings.
+- **Scheduled & Webhook-Driven Sync:**
+  - Automated ledger sync on a periodic schedule (internal timer or systemd timer).
+  - Optional webhook listener (`/api/plaid/webhook`) for instant sync upon `SYNC_UPDATES_AVAILABLE`.
 
 ---
 
@@ -40,8 +93,8 @@ Following an evaluation of Actual Budget's current ecosystem:
 
 ### Prerequisites
 - Node.js 22+ or 24+
-- An Actual Budget server running (or local budget file)
-- Plaid Developer Account (Client ID and Secret)
+- A running Actual Budget instance (or local budget file)
+- Plaid Developer Account ([plaid.com](https://plaid.com))
 
 ### 1. Clone & Install
 ```bash
@@ -51,22 +104,25 @@ npm install
 ```
 
 ### 2. Configure Environment
-Copy `.env.example` to `.env` and fill in your keys:
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
 
 ```ini
+# Plaid Credentials
 PLAID_CLIENT_ID=your_plaid_client_id
 PLAID_SECRET=your_plaid_secret
 PLAID_ENV=sandbox
 
+# Actual Budget Connection
 ACTUAL_SERVER_URL=http://localhost:5006
-ACTUAL_PASSWORD=your_actual_password
-ACTUAL_SYNC_ID=your_sync_id
-# Optional: If your budget is encrypted
+ACTUAL_PASSWORD=your_actual_server_password
+ACTUAL_SYNC_ID=your_budget_sync_id
+# Optional: If your budget file uses E2EE
 # ACTUAL_ENCRYPTION_PASSWORD=your_e2ee_password
 
+# Daemon Configuration
 PORT=8085
 DATA_DIR=./data
 SYNC_INTERVAL_MINUTES=240
@@ -76,20 +132,16 @@ SYNC_INTERVAL_MINUTES=240
 ```bash
 npm run dev
 ```
-Open `http://localhost:8085` in your browser.
-
-### 4. Run Test Suite
-```bash
-npm test
-```
+Open [http://localhost:8085](http://localhost:8085) in your browser.
 
 ---
 
 ## NixOS Deployment (`nixcfg`)
 
-Add `gone-to-plaid-sync` to your system configuration flake:
+`gone-to-plaid-sync` is packaged as a standard Nix Flake with a declarative NixOS service module.
 
-### `flake.nix`
+### 1. Add Flake Input
+In your `flake.nix`:
 ```nix
 {
   inputs = {
@@ -109,7 +161,8 @@ Add `gone-to-plaid-sync` to your system configuration flake:
 }
 ```
 
-### `configuration.nix`
+### 2. Configure Service
+In your `configuration.nix`:
 ```nix
 { config, pkgs, ... }:
 
@@ -124,18 +177,39 @@ Add `gone-to-plaid-sync` to your system configuration flake:
 ```
 
 The NixOS module automatically provisions:
-1. `gone-to-plaid-sync.service`: Hardened systemd daemon running the web dashboard and webhook listener.
-2. `gone-to-plaid-sync-trigger.timer`: Periodic timer triggering automated ledger sync passes.
-3. Isolated system user and dedicated state directory (`/var/lib/gone-to-plaid-sync`).
+- `gone-to-plaid-sync.service`: Sandboxed systemd service running under dedicated user `plaid-sync`.
+- `gone-to-plaid-sync-trigger.timer`: Systemd timer triggering scheduled background ledger updates.
+- Hardened sandbox with `ProtectSystem = "strict"`, `ProtectHome = true`, and `PrivateTmp = true`.
 
 ---
 
-## Plaid Free Trial Onboarding & Maintenance
+## Testing Strategy
 
-1. **Sandbox Testing:** Start with `PLAID_ENV=sandbox`. In the dashboard, click **Connect New Institution** and log in with Plaid test credentials (`user_good` / `pass_good`). Test account mapping and transaction import into a test budget.
-2. **Production Onboarding:** Switch `PLAID_ENV=production`. Click **Connect New Institution**, search for your bank (e.g. Veridian Credit Union), and complete authentication.
-3. **Account Topology Mapping:** Map each discovered Plaid account to its corresponding Actual Budget account in the dashboard matrix.
-4. **Connection Maintenance & Repair:** When your institution resets MFA or sessions, the dashboard marks the institution as `Login Required`. Clicking **Repair Connection** launches Plaid Link strictly in **Update Mode**, refreshing credentials without consuming another slot.
+The repository includes a comprehensive 4-tier test suite:
+
+```bash
+# 1. Run Unit & Mock Integration Tests (fast, ~1-2 seconds)
+npm test
+
+# 2. Run Typechecker
+npm run lint
+
+# 3. Run Declarative NixOS VM Test
+nix flake check
+```
+
+- **Unit Suite (`tests/index.test.ts`):** Verifies currency sign and cent transformations, negative-zero normalization, payee formatting, SQLite persistence, and defense quota rules.
+- **Integration Suite (`tests/integration.test.ts`):** Tests the live HTTP API server with mocked Plaid and Actual Budget APIs, verifying enrollment, update mode Link tokens, duplicate bank blocking, account mappings, and pending transaction resolution.
+- **NixOS VM Test (`nix/test.nix`):** Spawns an isolated QEMU virtual machine, verifies systemd unit startup, timer scheduling, port binding, and API status responses.
+
+---
+
+## Production Banking Workflow
+
+1. **Sandbox Validation:** Set `PLAID_ENV=sandbox`. Open the dashboard, click **Connect New Institution**, and use `user_good` / `pass_good` to test mapping accounts and importing transactions.
+2. **Production Onboarding:** Switch `PLAID_ENV=production`. In the dashboard, click **Connect New Institution**, select your financial institution (e.g. Veridian Credit Union), and complete MFA.
+3. **Account Topology Mapping:** In the dashboard table, map each discovered Plaid account to its corresponding Actual Budget account and enable the sync toggle.
+4. **Maintenance & Repair:** If an institution resets active sessions or updates security challenges, the dashboard highlights the connection with a pulsing **Login Required** badge. Clicking **Repair Connection** opens Plaid Link strictly in **Update Mode**, refreshing credentials on the existing token with **zero quota consumption**.
 
 ---
 
@@ -155,4 +229,4 @@ The NixOS module automatically provisions:
 
 ## License
 
-MIT © Joel
+MIT License. Copyright (c) 2026 Joel Benway. See [LICENSE](LICENSE) for details.

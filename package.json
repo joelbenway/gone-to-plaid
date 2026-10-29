@@ -21,7 +21,7 @@
     "nixos",
     "personal-finance"
   ],
-  "author": "Joel",
+  "author": "Joel Benway",
   "license": "MIT",
   "type": "module",
   "dependencies": {

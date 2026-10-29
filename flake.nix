@@ -1,3 +1,6 @@
+# Copyright (c) Joel Benway
+# SPDX-License-Identifier: MIT
+
 {
   description = "gone-to-plaid-sync: Resilient Plaid-to-Actual Budget bridge";
 

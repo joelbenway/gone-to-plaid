@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 import path from 'node:path';
 import fs from 'node:fs';
 import dotenv from 'dotenv';

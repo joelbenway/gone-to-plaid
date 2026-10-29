@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 import http, { IncomingMessage, ServerResponse } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';

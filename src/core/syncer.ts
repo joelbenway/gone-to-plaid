@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 import { DatabaseStore, PlaidItem } from '../db/index.js';
 import { PlaidService } from './plaid.js';
 import { ActualService, ActualImportTransaction } from './actual.js';

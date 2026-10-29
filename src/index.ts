@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
 
 import { loadConfig } from './config.js';
 import { DatabaseStore } from './db/index.js';

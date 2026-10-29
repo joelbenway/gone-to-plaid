@@ -1,3 +1,6 @@
+// Copyright (c) Joel Benway
+// SPDX-License-Identifier: MIT
+
 /**
  * Data transformation utilities between Plaid and Actual Budget conventions.
  */
