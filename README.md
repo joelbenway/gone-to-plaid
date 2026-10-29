@@ -227,6 +227,25 @@ nix flake check
 
 ---
 
+## Automated Releases & npm Publishing
+
+`gone-to-plaid` is continuously delivered to the [npm registry](https://www.npmjs.com/package/gone-to-plaid) via GitHub Actions CI with full [build provenance](https://docs.npmjs.com/generating-provenance-statements).
+
+To publish a new version:
+1. Bump the version in `package.json`:
+   ```bash
+   npm version patch # or minor, major
+   ```
+2. Commit and push to `master`:
+   ```bash
+   git push origin master --tags
+   ```
+3. GitHub Actions automatically executes the unit/integration tests, runs the NixOS VM verification, and publishes the new release directly to npm.
+
+> **Note:** Continuous publishing requires adding your npm granular access token as `NPM_TOKEN` under **Repository Settings -> Secrets and variables -> Actions** in GitHub.
+
+---
+
 ## License
 
 MIT License. Copyright (c) 2026 Joel Benway. See [LICENSE](LICENSE) for details.
