@@ -13,11 +13,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        packageJson = builtins.fromJSON (builtins.readFile ./package.json);
       in
       rec {
         packages.default = pkgs.buildNpmPackage {
-          pname = "gone-to-plaid";
-          version = "1.0.0";
+          pname = packageJson.name;
+          version = packageJson.version;
           src = ./.;
 
           npmDepsHash = "sha256-J+0rMKcpIi/lBLmlm687ySm3Ba3bvwDyGk0GQ32bDvM=";
