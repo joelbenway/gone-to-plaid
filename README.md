@@ -229,20 +229,31 @@ nix flake check
 
 ## Automated Releases & npm Publishing
 
-`gone-to-plaid` is continuously delivered to the [npm registry](https://www.npmjs.com/package/gone-to-plaid) via GitHub Actions CI with full [build provenance](https://docs.npmjs.com/generating-provenance-statements).
+`gone-to-plaid` is continuously delivered to the [npm registry](https://www.npmjs.com/package/gone-to-plaid) via GitHub Actions CI with full [build provenance](https://docs.npmjs.com/generating-provenance-statements) using **npm Trusted Publishing** (OIDC tokenless authentication). No long-lived secret tokens (`NPM_TOKEN`) are required.
 
-To publish a new version:
+### 1. Configure Trusted Publisher on npmjs.com (One-Time Setup)
+
+1. Log in to [npmjs.com](https://www.npmjs.com/) and navigate to your package settings: [npmjs.com/package/gone-to-plaid/access](https://www.npmjs.com/package/gone-to-plaid/access) (or **Settings** tab).
+2. Scroll to **Trusted Publishers** and click **Add trusted publisher** -> select **GitHub Actions**.
+3. Configure the fields:
+   - **GitHub Owner / Organization:** `joelbenway`
+   - **Repository:** `gone-to-plaid`
+   - **Workflow filename:** `ci.yaml`
+   - **Environment:** *(leave blank)*
+4. Click **Save**.
+
+### 2. Publishing New Releases
+
+Whenever you are ready to ship an update:
 1. Bump the version in `package.json`:
    ```bash
    npm version patch # or minor, major
    ```
-2. Commit and push to `master`:
+2. Push commit and tags to `master`:
    ```bash
    git push origin master --tags
    ```
-3. GitHub Actions automatically executes the unit/integration tests, runs the NixOS VM verification, and publishes the new release directly to npm.
-
-> **Note:** Continuous publishing requires adding your npm granular access token as `NPM_TOKEN` under **Repository Settings -> Secrets and variables -> Actions** in GitHub.
+3. GitHub Actions automatically executes the unit & integration test suite, verifies the NixOS module in a declarative VM, mints an ephemeral OIDC token via GitHub Actions (`id-token: write`), and publishes the new release directly to npm with cryptographic provenance.
 
 ---
 
