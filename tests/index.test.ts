@@ -7,6 +7,7 @@ import path from 'node:path';
 import { plaidToActualAmount, formatPayee } from '../src/core/transform.js';
 import { DefenseEngine, MAX_TRIAL_ITEMS, CONFIRM_PHRASE } from '../src/core/defense.js';
 import { DatabaseStore } from '../src/db/index.js';
+import { loadConfig } from '../src/config.js';
 
 console.log('--- Running gone-to-plaid Test Suite ---');
 
@@ -121,6 +122,27 @@ console.log('✓ Trial Defense Engine tests passed.');
 // Cleanup
 db.db.close();
 fs.rmSync(testDir, { recursive: true, force: true });
+
+
+// 4. Config Secret Resolution Tests
+console.log('Testing config secret resolution based on PLAID_ENV...');
+process.env.PLAID_SANDBOX_SECRET = 'sandbox-secret-123';
+process.env.PLAID_PRODUCTION_SECRET = 'prod-secret-456';
+
+process.env.PLAID_ENV = 'sandbox';
+delete process.env.PLAID_SECRET;
+let cfg = loadConfig();
+assert.equal(cfg.plaidSecret, 'sandbox-secret-123', 'Should select sandbox secret when PLAID_ENV=sandbox');
+
+process.env.PLAID_ENV = 'production';
+cfg = loadConfig();
+assert.equal(cfg.plaidSecret, 'prod-secret-456', 'Should select production secret when PLAID_ENV=production');
+
+process.env.PLAID_SECRET = 'fallback-secret';
+delete process.env.PLAID_PRODUCTION_SECRET;
+cfg = loadConfig();
+assert.equal(cfg.plaidSecret, 'fallback-secret', 'Should fallback to PLAID_SECRET');
+console.log('✓ Config secret resolution tests passed.');
 
 console.log('============================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY!');

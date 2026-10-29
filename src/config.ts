@@ -66,12 +66,21 @@ export function loadConfig(): AppConfig {
 
   const plaidEnv = (process.env.PLAID_ENV || 'sandbox') as 'sandbox' | 'production' | 'development';
 
+  const envSpecificSecret =
+    plaidEnv === 'production'
+      ? process.env.PLAID_PRODUCTION_SECRET || process.env.PLAID_SECRET_PRODUCTION
+      : plaidEnv === 'development'
+      ? process.env.PLAID_DEVELOPMENT_SECRET || process.env.PLAID_SECRET_DEVELOPMENT
+      : process.env.PLAID_SANDBOX_SECRET || process.env.PLAID_SECRET_SANDBOX;
+
+  const plaidSecret = envSpecificSecret || process.env.PLAID_SECRET || '';
+
   return {
     port,
     dataDir,
     actualDataDir,
     plaidClientId: process.env.PLAID_CLIENT_ID || '',
-    plaidSecret: process.env.PLAID_SECRET || '',
+    plaidSecret,
     plaidEnv,
     plaidRedirectUri: process.env.PLAID_REDIRECT_URI || undefined,
     actualServerUrl: process.env.ACTUAL_SERVER_URL,
